@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
+import { Zap, PlusCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ConnectButton } from '@/components/wallet/ConnectButton'
 import { ContractStatus } from '@/components/contract/ContractStatus'
 
@@ -13,8 +14,14 @@ export function Navbar() {
           <span>ChainFund</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <ContractStatus />
+          <Button asChild variant="outline" className="hidden sm:flex border-border hover:border-primary/50 gap-2">
+            <Link href="/campaigns/create">
+              <PlusCircle className="w-4 h-4" />
+              New Campaign
+            </Link>
+          </Button>
           <ConnectButton />
         </div>
       </div>

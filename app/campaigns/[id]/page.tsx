@@ -1,5 +1,4 @@
 'use client'
-import { use } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
@@ -8,12 +7,11 @@ import { PageWrapper } from '@/components/PageWrapper'
 import { useCampaign } from '@/hooks/useCampaign'
 
 interface CampaignPageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 export default function CampaignPage({ params }: CampaignPageProps) {
-  const { id } = use(params)
-  const campaignId = BigInt(id)
+  const campaignId = BigInt(params.id)
   const { campaign, isLoading, isError, error } = useCampaign(campaignId)
 
   return (

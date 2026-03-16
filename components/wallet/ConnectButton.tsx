@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from 'wagmi'
 import { motion } from 'framer-motion'
-import { Loader2, Wallet, ChevronDown, Copy, LogOut, AlertTriangle, Coins } from 'lucide-react'
+import { Loader2, Wallet, ChevronDown, Copy, LogOut, AlertTriangle, Coins, LayoutList, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import Link from 'next/link'
 import { truncateAddress } from '@/lib/utils'
 import { SUPPORTED_CHAIN_ID } from '@/lib/contract'
 import { useTokenBalance } from '@/hooks/useTokenBalance'
@@ -155,7 +156,26 @@ export function ConnectButton() {
           </div>
 
           {/* Actions */}
-          <div className="p-2">
+          <div className="p-2 space-y-0.5">
+            <Link
+              href="/campaigns/mine"
+              onClick={() => setDropdownOpen(false)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+              aria-label="My campaigns"
+            >
+              <LayoutList className="w-4 h-4 text-accent" />
+              My Campaigns
+            </Link>
+            <Link
+              href="/campaigns/create"
+              onClick={() => setDropdownOpen(false)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+              aria-label="Create a campaign"
+            >
+              <PlusCircle className="w-4 h-4 text-accent" />
+              Create Campaign
+            </Link>
+            <div className="my-1 border-t border-border" />
             <button
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
               onClick={copyAddress}
