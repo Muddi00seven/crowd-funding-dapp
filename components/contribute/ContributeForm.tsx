@@ -3,11 +3,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
 import { useAccount } from 'wagmi'
+import { Wallet } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ContributeButton } from './ContributeButton'
 import { contributeSchema, type ContributeFormData } from '@/lib/validations'
 import { useContribute } from '@/hooks/useContribute'
+import { useTokenBalance } from '@/hooks/useTokenBalance'
 
 interface ContributeFormProps {
   campaignId: bigint
@@ -16,7 +18,8 @@ interface ContributeFormProps {
 
 export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
   const { isConnected } = useAccount()
-  const { contribute, isPending, isSuccess } = useContribute()
+  const { contribute, isPending, isApproving, isSuccess } = useContribute()
+  const { formatted: balanceFormatted } = useTokenBalance()
 
   const {
     register,
@@ -39,7 +42,15 @@ export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
     >
-      <h3 className="font-semibold text-lg">Contribute</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-lg">Contribute</h3>
+        {isConnected && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">
+            <Wallet className="w-3 h-3" />
+            <span>{balanceFormatted} USDT</span>
+          </div>
+        )}
+      </div>
 
       {!isConnected && (
         <p className="text-sm text-muted-foreground">
@@ -55,17 +66,19 @@ export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount (ETH)</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="amount">Amount (USDT)</Label>
+          </div>
           <Input
             id="amount"
             type="number"
-            step="0.001"
-            min="0.001"
-            max="100"
-            placeholder="0.1"
+            step="1"
+            min="1"
+            max="100000"
+            placeholder="100"
             className="bg-muted border-border"
             disabled={!isConnected || isExpired || isPending}
-            aria-label="Contribution amount in ETH"
+            aria-label="Contribution amount in USDT"
             {...register('amount')}
           />
           {errors.amount && (
@@ -75,6 +88,7 @@ export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
 
         <ContributeButton
           isPending={isPending}
+          isApproving={isApproving}
           disabled={!isConnected || isExpired}
         />
       </form>

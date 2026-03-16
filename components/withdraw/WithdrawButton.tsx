@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useWithdraw } from '@/hooks/useWithdraw'
-import { formatEth } from '@/lib/utils'
+import { formatUsdt } from '@/lib/utils'
 import type { Campaign } from '@/types'
 
 interface WithdrawButtonProps {
@@ -87,7 +87,7 @@ export function WithdrawButton({ campaign }: WithdrawButtonProps) {
           <DialogHeader>
             <DialogTitle>Funds Withdraw Karo</DialogTitle>
             <DialogDescription>
-              Kya aap {formatEth(campaign.raised)} ETH withdraw karna chahte hain?
+              Kya aap {formatUsdt(campaign.raised)} USDT withdraw karna chahte hain?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

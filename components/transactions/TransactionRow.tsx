@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion'
 import { Copy, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
-import { truncateAddress, formatEth, timeAgo } from '@/lib/utils'
+import { truncateAddress, formatUsdt, timeAgo } from '@/lib/utils'
 import { getTxUrl, getAddressUrl } from '@/lib/contract'
 import type { Contribution } from '@/types'
 
@@ -29,14 +29,14 @@ export function TransactionRow({ contribution }: TransactionRowProps) {
           target="_blank"
           rel="noopener noreferrer"
           className="font-mono text-sm text-accent hover:underline flex items-center gap-1"
-          aria-label={`View contributor address on explorer`}
+          aria-label="View contributor address on explorer"
         >
           {truncateAddress(contribution.contributor, 4, 4)}
           <ExternalLink className="w-3 h-3" />
         </a>
       </td>
       <td className="py-3 px-2 text-sm font-medium text-foreground">
-        {formatEth(contribution.amount, 4)} ETH
+        {formatUsdt(contribution.amount)} USDT
       </td>
       <td className="py-3 px-2">
         <div className="flex items-center gap-1">

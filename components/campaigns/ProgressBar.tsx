@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import { formatEth, getProgress } from '@/lib/utils'
+import { formatUsdt, getProgress } from '@/lib/utils'
 
 interface ProgressBarProps {
   raised: bigint
@@ -21,8 +21,8 @@ export function ProgressBar({ raised, goal, animated = true }: ProgressBarProps)
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span className="text-foreground font-medium">{formatEth(raised)} ETH raised</span>
-        <span className="text-muted-foreground">of {formatEth(goal)} ETH</span>
+        <span className="text-foreground font-medium">{formatUsdt(raised)} USDT raised</span>
+        <span className="text-muted-foreground">of {formatUsdt(goal)} USDT</span>
       </div>
       <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
         {animated ? (

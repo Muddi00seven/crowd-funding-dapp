@@ -1,4 +1,4 @@
-import { formatEther } from 'viem'
+import { formatUnits } from 'viem'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -11,8 +11,9 @@ export function truncateAddress(address: string, start = 6, end = 4): string {
   return `${address.slice(0, start)}...${address.slice(-end)}`
 }
 
-export function formatEth(wei: bigint, decimals = 4): string {
-  return parseFloat(formatEther(wei)).toFixed(decimals)
+// USDT has 6 decimals
+export function formatUsdt(amount: bigint, decimals = 2): string {
+  return parseFloat(formatUnits(amount, 6)).toFixed(decimals)
 }
 
 export function getProgress(raised: bigint, goal: bigint): number {
@@ -36,7 +37,7 @@ export function timeAgo(timestamp: bigint): string {
   return rtf.format(-Math.floor(seconds / 86400), 'day')
 }
 
-export function isValidEthAmount(amount: string): boolean {
+export function isValidUsdtAmount(amount: string): boolean {
   const num = parseFloat(amount)
-  return !isNaN(num) && num >= 0.001 && num <= 100
+  return !isNaN(num) && num >= 1 && num <= 100000
 }

@@ -24,10 +24,6 @@ export function useWithdraw() {
           toast.error("Transaction cancel ho gayi")
           return
         }
-        if (error.message.includes('insufficient')) {
-          toast.error("Insufficient balance", { description: "Wallet mein ETH kam hai" })
-          return
-        }
         toast.error("Kuch ghalat hua", { description: error.message })
       }
     }
@@ -36,7 +32,7 @@ export function useWithdraw() {
   if (isSuccess && hash) {
     toast.dismiss('withdraw-pending')
     toast.success("Funds withdrawn!", {
-      description: "ETH aapke wallet mein transfer ho gayi",
+      description: "USDT aapke wallet mein transfer ho gayi",
       action: { label: "View Tx", onClick: () => window.open(getTxUrl(hash), '_blank') },
     })
   }

@@ -7,7 +7,7 @@ import { CampaignSkeleton } from './CampaignSkeleton'
 import { ContributeForm } from '@/components/contribute/ContributeForm'
 import { WithdrawButton } from '@/components/withdraw/WithdrawButton'
 import { TransactionHistory } from '@/components/transactions/TransactionHistory'
-import { formatEth, getDaysLeft, truncateAddress } from '@/lib/utils'
+import { formatUsdt, getDaysLeft, truncateAddress } from '@/lib/utils'
 import { getAddressUrl } from '@/lib/contract'
 import type { Campaign } from '@/types'
 
@@ -71,7 +71,7 @@ export function CampaignDetail({ campaign, isLoading, isError, error }: Campaign
             <div className="bg-muted rounded-lg p-4 text-center">
               <Target className="w-5 h-5 mx-auto mb-1 text-accent" />
               <p className="text-sm text-muted-foreground">Goal</p>
-              <p className="font-semibold">{formatEth(campaign.goal)} ETH</p>
+              <p className="font-semibold">{formatUsdt(campaign.goal)} USDT</p>
             </div>
             <div className="bg-muted rounded-lg p-4 text-center">
               <Users className="w-5 h-5 mx-auto mb-1 text-accent" />

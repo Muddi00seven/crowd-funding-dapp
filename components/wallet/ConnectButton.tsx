@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from 'wagmi'
 import { motion } from 'framer-motion'
-import { Loader2, Wallet, ChevronDown, Copy, LogOut, AlertTriangle } from 'lucide-react'
+import { Loader2, Wallet, ChevronDown, Copy, LogOut, AlertTriangle, Coins } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { truncateAddress } from '@/lib/utils'
 import { SUPPORTED_CHAIN_ID } from '@/lib/contract'
+import { useTokenBalance } from '@/hooks/useTokenBalance'
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount()
@@ -23,6 +24,7 @@ export function ConnectButton() {
   const { switchChain } = useSwitchChain()
   const chainId = useChainId()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const { formatted: balanceFormatted } = useTokenBalance()
 
   const isCorrectNetwork = chainId === SUPPORTED_CHAIN_ID
 
@@ -119,12 +121,24 @@ export function ConnectButton() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden"
+          className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden"
         >
-          <div className="p-4 border-b border-border">
-            <p className="text-xs text-muted-foreground mb-1">Connected address</p>
-            <p className="font-mono text-sm break-all">{address}</p>
+          {/* Address + Balance */}
+          <div className="p-4 border-b border-border space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Connected address</p>
+              <p className="font-mono text-sm break-all">{address}</p>
+            </div>
+            <div className="flex items-center justify-between bg-muted rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4 text-accent" />
+                <span className="text-xs text-muted-foreground">USDT Balance</span>
+              </div>
+              <span className="font-semibold text-sm">{balanceFormatted} USDT</span>
+            </div>
           </div>
+
+          {/* Actions */}
           <div className="p-2">
             <button
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
