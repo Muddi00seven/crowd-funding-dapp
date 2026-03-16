@@ -11,7 +11,7 @@ export function useCampaigns() {
   })
 
   // Use mock data when contract not deployed
-  const useMock = !CONTRACT_ADDRESS || CONTRACT_ADDRESS === 'undefined'
+  const useMock = !CONTRACT_ADDRESS || CONTRACT_ADDRESS === ('' as `0x${string}`)
 
   return {
     campaigns: useMock ? MOCK_CAMPAIGNS : (data as Campaign[] | undefined),

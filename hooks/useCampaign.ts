@@ -4,7 +4,7 @@ import { MOCK_CAMPAIGNS } from '@/lib/mockData'
 import type { Campaign } from '@/types'
 
 export function useCampaign(campaignId: bigint) {
-  const useMock = !CONTRACT_ADDRESS || CONTRACT_ADDRESS === 'undefined'
+  const useMock = !CONTRACT_ADDRESS || CONTRACT_ADDRESS === ('' as `0x${string}`)
 
   const { data, isLoading, isError, error, refetch } = useReadContract({
     address: CONTRACT_ADDRESS,
