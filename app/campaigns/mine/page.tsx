@@ -1,7 +1,7 @@
 'use client'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useAccount } from 'wagmi'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { PlusCircle, ArrowRight, Clock, CheckCircle, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +22,7 @@ const cardVariants = {
 }
 
 export default function MyCampaignsPage() {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected } = useWeb3()
   const { campaigns, isLoading } = useCampaigns()
 
   const myCampaigns = campaigns.filter(

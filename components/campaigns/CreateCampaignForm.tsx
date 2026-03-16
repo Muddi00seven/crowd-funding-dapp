@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { useAccount } from 'wagmi'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { motion } from 'framer-motion'
 import { Loader2, Rocket, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { createCampaignSchema, type CreateCampaignFormData } from '@/lib/validat
 import { useCreateCampaign } from '@/hooks/useCreateCampaign'
 
 export function CreateCampaignForm() {
-  const { isConnected } = useAccount()
+  const { isConnected } = useWeb3()
   const { createCampaign, isPending, isSuccess } = useCreateCampaign()
   const router = useRouter()
 

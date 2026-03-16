@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAccount } from 'wagmi'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { Wallet, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,7 @@ import { ContributeButton } from './ContributeButton'
 import { contributeSchema, type ContributeFormData } from '@/lib/validations'
 import { useContribute } from '@/hooks/useContribute'
 import { useTokenBalance } from '@/hooks/useTokenBalance'
+import { BlockchainLoadingScreen } from '@/components/transactions/BlockchainLoadingScreen'
 
 interface ContributeFormProps {
   campaignId: bigint
@@ -18,9 +19,10 @@ interface ContributeFormProps {
 }
 
 export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeFormProps) {
-  const { isConnected } = useAccount()
-  const { contribute, isPending, isApproving, pendingStep, isSuccess } = useContribute()
+  const { isConnected } = useWeb3()
+  const { contribute, isPending, isApproving, pendingStep } = useContribute()
   const { formatted: balanceFormatted, refetch: refetchBalance } = useTokenBalance()
+  const isConfirmingOnChain = pendingStep === 'approve-confirming' || pendingStep === 'contribute-confirming'
 
   const {
     register,
@@ -41,15 +43,21 @@ export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeF
   }
 
   return (
-    <motion.div
-      className="rounded-xl border border-border bg-card p-6 space-y-4 relative overflow-hidden"
-      initial={{ opacity: 0, x: 16 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-    >
+    <>
+      <BlockchainLoadingScreen
+        open={isConfirmingOnChain}
+        title="Transaction submitted"
+        description="Waiting for blockchain confirmation..."
+      />
+      <motion.div
+        className="rounded-xl border border-border bg-card p-6 space-y-4 relative overflow-hidden"
+        initial={{ opacity: 0, x: 16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
       {/* Transaction pending overlay */}
       <AnimatePresence>
-        {isPending && (
+        {isPending && !isConfirmingOnChain && (
           <motion.div
             key="pending-overlay"
             initial={{ opacity: 0 }}
@@ -62,9 +70,7 @@ export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeF
             <div className="text-center space-y-1">
               <p className="font-semibold text-sm">
                 {pendingStep === 'approve-signing' && 'Step 1/2 — Approving USDT'}
-                {pendingStep === 'approve-confirming' && 'Step 1/2 — Confirming Approval'}
                 {pendingStep === 'contribute-signing' && 'Step 2/2 — Contributing'}
-                {pendingStep === 'contribute-confirming' && 'Step 2/2 — Confirming Transaction'}
                 {!pendingStep && isPending && 'Processing...'}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -124,6 +130,7 @@ export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeF
           disabled={!isConnected || isExpired}
         />
       </form>
-    </motion.div>
+      </motion.div>
+    </>
   )
 }

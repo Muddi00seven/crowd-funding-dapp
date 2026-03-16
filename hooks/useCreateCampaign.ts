@@ -1,68 +1,71 @@
 'use client'
 import { useState } from 'react'
-import { useConfig } from 'wagmi'
-import { parseUnits } from 'viem'
-import { CONTRACT_ABI, CONTRACT_ADDRESS, getTxUrl } from '@/lib/contract'
-import { sendContractWrite, waitForTx, getErrorMessage, isUserRejection } from '@/lib/walletClient'
+import { parseUnits } from 'ethers'
+import { getCrowdFundingContract, getTxUrl } from '@/lib/contract'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { toast } from 'sonner'
 import type { CreateCampaignFormData } from '@/lib/validations'
 
-export function useCreateCampaign() {
-  const config = useConfig()
-  const [isPending, setIsPending] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [hash, setHash] = useState<`0x${string}` | undefined>()
+function isUserRejection(e: unknown): boolean {
+  const code = (e as { code?: string | number })?.code
+  if (code === 4001 || code === 'ACTION_REJECTED') return true
+  const msg = ((e as { message?: string })?.message ?? '').toLowerCase()
+  return msg.includes('rejected') || msg.includes('denied') || msg.includes('user rejected')
+}
 
-  const createCampaign = async (data: CreateCampaignFormData) => {
+export type CreateStep = 'signing' | 'confirming' | null
+
+export function useCreateCampaign() {
+  const { getSigner, isConnected } = useWeb3()
+  const [isPending, setIsPending] = useState(false)
+  const [pendingStep, setPendingStep] = useState<CreateStep>(null)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [hash, setHash] = useState<string | undefined>()
+
+  const createCampaign = async (data: CreateCampaignFormData): Promise<boolean> => {
+    if (!isConnected) return false
     setIsPending(true)
     setIsSuccess(false)
 
     try {
-      toast.loading("Creating campaign...", {
-        id: 'create-campaign',
-        description: "Confirm the transaction in MetaMask",
-      })
+      const signer = await getSigner()
+      const contract = getCrowdFundingContract(signer)
 
-      const txHash = await sendContractWrite({
-        config,
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'createCampaign',
-        args: [
-          data.title,
-          data.description,
-          parseUnits(data.goalUsdt, 6),
-          BigInt(data.durationDays),
-        ],
-      })
+      // MetaMask open
+      setPendingStep('signing')
+      toast.loading('Creating campaign...', { id: 'create', description: 'Confirm in MetaMask' })
 
-      toast.loading("Waiting for confirmation...", {
-        id: 'create-campaign',
-        description: "Transaction submitted, mining...",
-      })
+      const tx = await contract.createCampaign(
+        data.title,
+        data.description,
+        parseUnits(data.goalUsdt, 6),
+        BigInt(data.durationDays),
+      )
+      setHash(tx.hash)
 
-      await waitForTx(config, txHash)
+      // Waiting for confirmation
+      setPendingStep('confirming')
+      toast.loading('Confirming campaign...', { id: 'create', description: 'Waiting for blockchain...' })
+      await tx.wait()
 
-      setHash(txHash)
       setIsSuccess(true)
-      toast.dismiss('create-campaign')
-      toast.success("Campaign created!", {
-        description: "Your campaign is now live on-chain",
-        action: { label: "View Tx", onClick: () => window.open(getTxUrl(txHash), '_blank') },
+      toast.dismiss('create')
+      toast.success('Campaign created!', {
+        description: 'Your campaign is now live on-chain',
+        action: { label: 'View Tx', onClick: () => window.open(getTxUrl(tx.hash), '_blank') },
       })
-    } catch (error: unknown) {
-      console.error('[useCreateCampaign] error:', error)
-      toast.dismiss('create-campaign')
-
-      if (isUserRejection(error)) {
-        toast.error("Transaction cancelled")
-      } else {
-        toast.error("Failed to create campaign", { description: getErrorMessage(error).slice(0, 300) })
-      }
+      return true
+    } catch (e: unknown) {
+      console.error('[useCreateCampaign]', e)
+      toast.dismiss('create')
+      if (isUserRejection(e)) toast.error('Transaction cancelled')
+      else toast.error('Failed to create campaign', { description: (e as { message?: string })?.message })
+      return false
     } finally {
       setIsPending(false)
+      setPendingStep(null)
     }
   }
 
-  return { createCampaign, isPending, isSuccess, hash }
+  return { createCampaign, isPending, pendingStep, isSuccess, hash }
 }

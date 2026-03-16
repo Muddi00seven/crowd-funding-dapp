@@ -1,5 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { BrowserProvider } from 'ethers'
+import type { Eip1193Provider } from 'ethers'
+import { useAppKitProvider } from '@reown/appkit/react'
 import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import type { Contribution } from '@/types'
 
@@ -15,26 +18,34 @@ function parseContribution(r: any): Contribution {
 
 export function useTransactions(campaignId: bigint) {
   const useMock = !CONTRACT_ADDRESS
+  const { walletProvider } = useAppKitProvider<Eip1193Provider>('eip155')
   const [contributions, setContributions] = useState<Contribution[]>([])
   const [isLoading, setIsLoading] = useState(!useMock)
+  const [isError, setIsError] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
   const fetchContributions = useCallback(async () => {
     if (useMock) { setIsLoading(false); return }
     setIsLoading(true)
+    setIsError(false)
     try {
-      const provider = getReadProvider()
+      const provider = walletProvider
+        ? new BrowserProvider(walletProvider)
+        : getReadProvider()
       const contract = getCrowdFundingContract(provider)
       const results = await contract.getContributions(campaignId)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setContributions((results as any[]).map(parseContribution))
     } catch (e) {
       console.error('useTransactions:', e)
+      setIsError(true)
+      setError(e as Error)
     } finally {
       setIsLoading(false)
     }
-  }, [useMock, campaignId])
+  }, [useMock, campaignId, walletProvider])
 
   useEffect(() => { fetchContributions() }, [fetchContributions])
 
-  return { contributions, isLoading, refetch: fetchContributions }
+  return { contributions, isLoading, isError, error, refetch: fetchContributions }
 }

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useAccount } from 'wagmi'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { Loader2, DollarSign, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +22,7 @@ interface WithdrawButtonProps {
 }
 
 export function WithdrawButton({ campaign }: WithdrawButtonProps) {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected } = useWeb3()
   const { withdraw, isPending, isSuccess } = useWithdraw()
   const [open, setOpen] = useState(false)
 

@@ -1,99 +1,39 @@
 'use client'
 import { useState } from 'react'
-import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from 'wagmi'
 import { motion } from 'framer-motion'
-import { Loader2, Wallet, ChevronDown, Copy, LogOut, AlertTriangle, Coins, LayoutList, PlusCircle } from 'lucide-react'
+import { Wallet, ChevronDown, Copy, LogOut, AlertTriangle, Coins, LayoutList, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { truncateAddress } from '@/lib/utils'
 import { SUPPORTED_CHAIN_ID } from '@/lib/contract'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { useTokenBalance } from '@/hooks/useTokenBalance'
 
 export function ConnectButton() {
-  const { address, isConnected } = useAccount()
-  const { connect, connectors, isPending, error: connectError } = useConnect()
-  const { disconnect } = useDisconnect()
-  const { switchChain } = useSwitchChain()
-  const chainId = useChainId()
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const { address, isConnected, chainId, openModal, disconnect } = useWeb3()
   const { formatted: balanceFormatted } = useTokenBalance()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const isCorrectNetwork = chainId === SUPPORTED_CHAIN_ID
-
-  const handleConnect = (connector: (typeof connectors)[number]) => {
-    connect(
-      { connector },
-      {
-        onSuccess: () => setDialogOpen(false),
-        onError: (err) => {
-          if (err.message.includes('rejected') || err.message.includes('denied')) {
-            toast.error("Connection cancelled")
-          } else {
-            toast.error("Failed to connect wallet", { description: err.message })
-          }
-        },
-      }
-    )
-  }
 
   const copyAddress = () => {
     if (!address) return
     navigator.clipboard.writeText(address)
-    toast.success("Address copied!")
+    toast.success('Address copied!')
     setDropdownOpen(false)
   }
 
   // Not connected
   if (!isConnected) {
     return (
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.15 }}>
-            <Button className="bg-primary hover:bg-primary/90" aria-label="Connect wallet">
-              <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
-            </Button>
-          </motion.div>
-        </DialogTrigger>
-        <DialogContent className="bg-card border-border sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select a Wallet</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            {connectors.map((connector) => (
-              <Button
-                key={connector.uid}
-                variant="outline"
-                className="w-full justify-start border-border hover:border-primary/50"
-                onClick={() => handleConnect(connector)}
-                disabled={isPending}
-                aria-label={`Connect with ${connector.name}`}
-              >
-                {isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Wallet className="w-4 h-4 mr-2" />
-                )}
-                {connector.name}
-                {isPending && <span className="ml-auto text-xs text-muted-foreground">Connecting...</span>}
-              </Button>
-            ))}
-            {connectError && (
-              <p className="text-xs text-destructive text-center">{connectError.message}</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.15 }}>
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => openModal()} aria-label="Connect wallet">
+          <Wallet className="w-4 h-4 mr-2" />
+          Connect Wallet
+        </Button>
+      </motion.div>
     )
   }
 
@@ -109,16 +49,16 @@ export function ConnectButton() {
           variant="outline"
           size="sm"
           className="border-destructive text-destructive hover:bg-destructive/10"
-          onClick={() => switchChain({ chainId: 11155111 })}
-          aria-label="Switch to Sepolia network"
+          onClick={() => openModal({ view: 'Networks' })}
+          aria-label="Switch network"
         >
-          Switch to Sepolia
+          Switch Network
         </Button>
       </div>
     )
   }
 
-  // Connected, correct network
+  // Connected + correct network
   return (
     <div className="relative">
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.15 }}>
@@ -140,7 +80,6 @@ export function ConnectButton() {
           animate={{ opacity: 1, y: 0 }}
           className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden"
         >
-          {/* Address + Balance */}
           <div className="p-4 border-b border-border space-y-3">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Connected address</p>
@@ -155,13 +94,11 @@ export function ConnectButton() {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="p-2 space-y-0.5">
             <Link
               href="/campaigns/mine"
               onClick={() => setDropdownOpen(false)}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
-              aria-label="My campaigns"
             >
               <LayoutList className="w-4 h-4 text-accent" />
               My Campaigns
@@ -170,7 +107,6 @@ export function ConnectButton() {
               href="/campaigns/create"
               onClick={() => setDropdownOpen(false)}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
-              aria-label="Create a campaign"
             >
               <PlusCircle className="w-4 h-4 text-accent" />
               Create Campaign
@@ -179,7 +115,6 @@ export function ConnectButton() {
             <button
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
               onClick={copyAddress}
-              aria-label="Copy full address"
             >
               <Copy className="w-4 h-4" />
               Copy Address
@@ -187,7 +122,6 @@ export function ConnectButton() {
             <button
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
               onClick={() => { disconnect(); setDropdownOpen(false) }}
-              aria-label="Disconnect wallet"
             >
               <LogOut className="w-4 h-4" />
               Disconnect
@@ -196,9 +130,7 @@ export function ConnectButton() {
         </motion.div>
       )}
 
-      {dropdownOpen && (
-        <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-      )}
+      {dropdownOpen && <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />}
     </div>
   )
 }

@@ -1,16 +1,13 @@
 'use client'
-import { useAccount, useChainId } from 'wagmi'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { Badge } from '@/components/ui/badge'
 import { truncateAddress } from '@/lib/utils'
-import { SUPPORTED_CHAIN_ID } from '@/lib/contract'
 
 export function WalletStatus() {
-  const { address, isConnected } = useAccount()
-  const chainId = useChainId()
+  const { address, isConnected, chainId, isCorrectNetwork } = useWeb3()
 
   if (!isConnected || !address) return null
 
-  const isCorrectNetwork = chainId === SUPPORTED_CHAIN_ID
   const networkName = chainId === 1 ? 'Mainnet' : chainId === 11155111 ? 'Sepolia' : `Chain ${chainId}`
 
   return (

@@ -1,4 +1,5 @@
 'use client'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { ExternalLink, Users, Clock, Target } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +21,13 @@ interface CampaignDetailProps {
 }
 
 export function CampaignDetail({ campaign, isLoading, isError, error, refetchCampaign }: CampaignDetailProps) {
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleSuccess = useCallback(() => {
+    refetchCampaign()
+    setRefreshKey((k) => k + 1)
+  }, [refetchCampaign])
+
   if (isLoading) return <CampaignSkeleton />
 
   if (isError) {
@@ -99,12 +107,12 @@ export function CampaignDetail({ campaign, isLoading, isError, error, refetchCam
             </a>
           </div>
 
-          <TransactionHistory campaignId={campaign.id} />
+          <TransactionHistory campaignId={campaign.id} refreshKey={refreshKey} />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
-          <ContributeForm campaignId={campaign.id} isExpired={isExpired} onSuccess={refetchCampaign} />
+          <ContributeForm campaignId={campaign.id} isExpired={isExpired} onSuccess={handleSuccess} />
           <WithdrawButton campaign={campaign} />
         </div>
       </div>

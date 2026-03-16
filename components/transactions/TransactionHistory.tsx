@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TransactionRow } from './TransactionRow'
@@ -6,10 +7,16 @@ import { useTransactions } from '@/hooks/useTransactions'
 
 interface TransactionHistoryProps {
   campaignId: bigint
+  refreshKey?: number
 }
 
-export function TransactionHistory({ campaignId }: TransactionHistoryProps) {
-  const { contributions, isLoading, isError, error } = useTransactions(campaignId)
+export function TransactionHistory({ campaignId, refreshKey }: TransactionHistoryProps) {
+  const { contributions, isLoading, isError, error, refetch } = useTransactions(campaignId)
+
+  useEffect(() => {
+    if (refreshKey && refreshKey > 0) refetch()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey])
 
   if (isLoading) {
     return (
