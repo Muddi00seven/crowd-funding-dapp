@@ -1,9 +1,9 @@
 'use client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount } from 'wagmi'
-import { Wallet } from 'lucide-react'
+import { Wallet, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ContributeButton } from './ContributeButton'
@@ -14,12 +14,13 @@ import { useTokenBalance } from '@/hooks/useTokenBalance'
 interface ContributeFormProps {
   campaignId: bigint
   isExpired: boolean
+  onSuccess?: () => void
 }
 
-export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
+export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeFormProps) {
   const { isConnected } = useAccount()
-  const { contribute, isPending, isApproving, isSuccess } = useContribute()
-  const { formatted: balanceFormatted } = useTokenBalance()
+  const { contribute, isPending, isApproving, pendingStep, isSuccess } = useContribute()
+  const { formatted: balanceFormatted, refetch: refetchBalance } = useTokenBalance()
 
   const {
     register,
@@ -31,17 +32,50 @@ export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
   })
 
   const onSubmit = async (data: ContributeFormData) => {
-    await contribute(campaignId, data.amount)
-    if (isSuccess) reset()
+    const success = await contribute(campaignId, data.amount)
+    if (success) {
+      reset()
+      refetchBalance()
+      onSuccess?.()
+    }
   }
 
   return (
     <motion.div
-      className="rounded-xl border border-border bg-card p-6 space-y-4"
+      className="rounded-xl border border-border bg-card p-6 space-y-4 relative overflow-hidden"
       initial={{ opacity: 0, x: 16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
     >
+      {/* Transaction pending overlay */}
+      <AnimatePresence>
+        {isPending && (
+          <motion.div
+            key="pending-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-card/90 backdrop-blur-sm"
+          >
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="text-center space-y-1">
+              <p className="font-semibold text-sm">
+                {pendingStep === 'approve-signing' && 'Step 1/2 — Approving USDT'}
+                {pendingStep === 'approve-confirming' && 'Step 1/2 — Confirming Approval'}
+                {pendingStep === 'contribute-signing' && 'Step 2/2 — Contributing'}
+                {pendingStep === 'contribute-confirming' && 'Step 2/2 — Confirming Transaction'}
+                {!pendingStep && isPending && 'Processing...'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {(pendingStep === 'approve-signing' || pendingStep === 'contribute-signing')
+                  ? 'Confirm in MetaMask'
+                  : 'Waiting for blockchain confirmation...'}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg">Contribute</h3>
         {isConnected && (

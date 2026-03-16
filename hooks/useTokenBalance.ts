@@ -1,37 +1,37 @@
-import { useReadContract, useAccount } from 'wagmi'
-import { USDT_ABI, USDT_TOKEN_ADDRESS, CONTRACT_ADDRESS } from '@/lib/contract'
+'use client'
+import { useState, useEffect, useCallback } from 'react'
+import { getReadProvider, getUsdtContract, USDT_TOKEN_ADDRESS, CONTRACT_ADDRESS } from '@/lib/contract'
 import { formatUsdt } from '@/lib/utils'
+import { useWeb3 } from '@/hooks/useWeb3'
 
 export function useTokenBalance() {
-  const { address, isConnected } = useAccount()
-  const hasToken = USDT_TOKEN_ADDRESS && USDT_TOKEN_ADDRESS !== ('' as `0x${string}`)
+  const { address, isConnected } = useWeb3()
+  const [balance, setBalance] = useState(0n)
+  const [allowance, setAllowance] = useState(0n)
+  const hasToken = !!USDT_TOKEN_ADDRESS
 
-  const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: USDT_TOKEN_ADDRESS,
-    abi: USDT_ABI,
-    functionName: 'balanceOf',
-    args: [address ?? '0x0000000000000000000000000000000000000000'],
-    query: { enabled: isConnected && !!address && hasToken },
-  })
+  const fetchBalances = useCallback(async () => {
+    if (!isConnected || !address || !hasToken) return
+    try {
+      const provider = getReadProvider()
+      const contract = getUsdtContract(provider)
+      const [bal, allow] = await Promise.all([
+        contract.balanceOf(address),
+        contract.allowance(address, CONTRACT_ADDRESS),
+      ])
+      setBalance(bal as bigint)
+      setAllowance(allow as bigint)
+    } catch (e) {
+      console.error('useTokenBalance:', e)
+    }
+  }, [address, isConnected, hasToken])
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: USDT_TOKEN_ADDRESS,
-    abi: USDT_ABI,
-    functionName: 'allowance',
-    args: [
-      address ?? '0x0000000000000000000000000000000000000000',
-      CONTRACT_ADDRESS,
-    ],
-    query: { enabled: isConnected && !!address && hasToken },
-  })
-
-  const balanceBigInt = (balance as bigint | undefined) ?? 0n
-  const allowanceBigInt = (allowance as bigint | undefined) ?? 0n
+  useEffect(() => { fetchBalances() }, [fetchBalances])
 
   return {
-    balance: balanceBigInt,
-    allowance: allowanceBigInt,
-    formatted: hasToken ? formatUsdt(balanceBigInt) : '—',
-    refetch: () => { refetchBalance(); refetchAllowance() },
+    balance,
+    allowance,
+    formatted: hasToken ? formatUsdt(balance) : '—',
+    refetch: fetchBalances,
   }
 }

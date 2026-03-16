@@ -1,5 +1,5 @@
 import { Campaign, Contribution } from '@/types'
-import { parseUnits } from 'viem'
+import { parseUnits } from 'ethers'
 
 const usdt = (amount: string) => parseUnits(amount, 6)
 

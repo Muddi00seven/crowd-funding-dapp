@@ -1,6 +1,6 @@
 export interface Campaign {
   id: bigint
-  creator: `0x${string}`
+  creator: string
   title: string
   description: string
   goal: bigint
@@ -11,25 +11,8 @@ export interface Campaign {
 }
 
 export interface Contribution {
-  contributor: `0x${string}`
+  contributor: string
   amount: bigint
-  txHash: `0x${string}`
+  txHash: string
   timestamp: bigint
-}
-
-export interface ContributeFormData {
-  amount: string
-}
-
-export interface CreateCampaignFormData {
-  title: string
-  description: string
-  goalEth: string
-  durationDays: number
-}
-
-export interface WalletState {
-  isConnected: boolean
-  address?: `0x${string}`
-  chainId?: number
 }

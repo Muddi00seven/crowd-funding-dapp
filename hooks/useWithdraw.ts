@@ -1,46 +1,64 @@
 'use client'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { CONTRACT_ABI, CONTRACT_ADDRESS, getTxUrl } from '@/lib/contract'
+import { useState } from 'react'
+import { getCrowdFundingContract, getTxUrl } from '@/lib/contract'
+import { useWeb3 } from '@/hooks/useWeb3'
 import { toast } from 'sonner'
 
+function isUserRejection(e: unknown): boolean {
+  const code = (e as { code?: string | number })?.code
+  if (code === 4001 || code === 'ACTION_REJECTED') return true
+  const msg = ((e as { message?: string })?.message ?? '').toLowerCase()
+  return msg.includes('rejected') || msg.includes('denied') || msg.includes('user rejected')
+}
+
+export type WithdrawStep = 'signing' | 'confirming' | null
+
 export function useWithdraw() {
-  const { writeContract, data: hash, isPending } = useWriteContract()
+  const { getSigner, isConnected } = useWeb3()
+  const [isPending, setIsPending] = useState(false)
+  const [pendingStep, setPendingStep] = useState<WithdrawStep>(null)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [hash, setHash] = useState<string | undefined>()
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const withdraw = async (campaignId: bigint): Promise<boolean> => {
+    if (!isConnected) return false
+    setIsPending(true)
+    setIsSuccess(false)
 
-  const withdraw = async (campaignId: bigint) => {
     try {
-      toast.loading("Withdrawal pending...", { id: 'withdraw-pending', description: "Confirm in MetaMask" })
-      writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'withdraw',
-        args: [campaignId],
+      const signer = await getSigner()
+      const contract = getCrowdFundingContract(signer)
+
+      // MetaMask open
+      setPendingStep('signing')
+      toast.loading('Withdrawing funds...', { id: 'withdraw', description: 'Confirm in MetaMask' })
+
+      const tx = await contract.withdraw(campaignId)
+      setHash(tx.hash)
+
+      // Waiting for confirmation
+      setPendingStep('confirming')
+      toast.loading('Confirming withdrawal...', { id: 'withdraw', description: 'Waiting for blockchain...' })
+      await tx.wait()
+
+      setIsSuccess(true)
+      toast.dismiss('withdraw')
+      toast.success('Funds withdrawn!', {
+        description: 'USDT has been transferred to your wallet',
+        action: { label: 'View Tx', onClick: () => window.open(getTxUrl(tx.hash), '_blank') },
       })
-    } catch (error) {
-      toast.dismiss('withdraw-pending')
-      if (error instanceof Error) {
-        if (error.message.includes('rejected') || error.message.includes('denied')) {
-          toast.error("Transaction cancelled")
-          return
-        }
-        toast.error("Transaction failed", { description: error.message })
-      }
+      return true
+    } catch (e: unknown) {
+      console.error('[useWithdraw]', e)
+      toast.dismiss('withdraw')
+      if (isUserRejection(e)) toast.error('Transaction cancelled')
+      else toast.error('Withdrawal failed', { description: (e as { message?: string })?.message })
+      return false
+    } finally {
+      setIsPending(false)
+      setPendingStep(null)
     }
   }
 
-  if (isSuccess && hash) {
-    toast.dismiss('withdraw-pending')
-    toast.success("Funds withdrawn!", {
-      description: "USDT has been transferred to your wallet",
-      action: { label: "View Tx", onClick: () => window.open(getTxUrl(hash), '_blank') },
-    })
-  }
-
-  return {
-    withdraw,
-    isPending: isPending || isConfirming,
-    isSuccess,
-    hash,
-  }
+  return { withdraw, isPending, pendingStep, isSuccess, hash }
 }

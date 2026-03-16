@@ -16,9 +16,10 @@ interface CampaignDetailProps {
   isLoading: boolean
   isError: boolean
   error: Error | null
+  refetchCampaign: () => void
 }
 
-export function CampaignDetail({ campaign, isLoading, isError, error }: CampaignDetailProps) {
+export function CampaignDetail({ campaign, isLoading, isError, error, refetchCampaign }: CampaignDetailProps) {
   if (isLoading) return <CampaignSkeleton />
 
   if (isError) {
@@ -103,7 +104,7 @@ export function CampaignDetail({ campaign, isLoading, isError, error }: Campaign
 
         {/* Sidebar */}
         <div className="space-y-4">
-          <ContributeForm campaignId={campaign.id} isExpired={isExpired} />
+          <ContributeForm campaignId={campaign.id} isExpired={isExpired} onSuccess={refetchCampaign} />
           <WithdrawButton campaign={campaign} />
         </div>
       </div>

@@ -1,48 +1,51 @@
-import { useReadContract } from 'wagmi'
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from '@/lib/contract'
+'use client'
+import { useState, useEffect, useCallback } from 'react'
+import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import { MOCK_CAMPAIGNS } from '@/lib/mockData'
 import type { Campaign } from '@/types'
 
-type CampaignTuple = readonly [bigint, `0x${string}`, string, string, bigint, bigint, bigint, boolean, bigint]
-
-function parseCampaignTuple(raw: CampaignTuple): Campaign {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseCampaign(r: any): Campaign {
   return {
-    id: raw[0],
-    creator: raw[1],
-    title: raw[2],
-    description: raw[3],
-    goal: raw[4],
-    raised: raw[5],
-    deadline: raw[6],
-    withdrawn: raw[7],
-    contributorsCount: raw[8],
+    id: r[0] as bigint,
+    creator: r[1] as string,
+    title: r[2] as string,
+    description: r[3] as string,
+    goal: r[4] as bigint,
+    raised: r[5] as bigint,
+    deadline: r[6] as bigint,
+    withdrawn: r[7] as boolean,
+    contributorsCount: r[8] as bigint,
   }
 }
 
 export function useCampaign(campaignId: bigint) {
-  const useMock = !CONTRACT_ADDRESS || CONTRACT_ADDRESS === ('' as `0x${string}`)
+  const useMock = !CONTRACT_ADDRESS
+  const [campaign, setCampaign] = useState<Campaign | undefined>(
+    useMock ? MOCK_CAMPAIGNS.find((c) => c.id === campaignId) : undefined
+  )
+  const [isLoading, setIsLoading] = useState(!useMock)
+  const [isError, setIsError] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
-  const { data, isLoading, isError, error, refetch } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    functionName: 'getCampaign',
-    args: [campaignId],
-    query: { enabled: !useMock },
-  })
+  const fetchCampaign = useCallback(async () => {
+    if (useMock) return
+    setIsLoading(true)
+    setIsError(false)
+    try {
+      const provider = getReadProvider()
+      const contract = getCrowdFundingContract(provider)
+      const result = await contract.getCampaign(campaignId)
+      setCampaign(parseCampaign(result))
+    } catch (e) {
+      setIsError(true)
+      setError(e as Error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [useMock, campaignId])
 
-  const mockCampaign = MOCK_CAMPAIGNS.find((c) => c.id === campaignId)
+  useEffect(() => { fetchCampaign() }, [fetchCampaign])
 
-  const campaign = useMock
-    ? mockCampaign
-    : data
-    ? parseCampaignTuple(data as CampaignTuple)
-    : undefined
-
-  return {
-    campaign,
-    isLoading: useMock ? false : isLoading,
-    isError: useMock ? false : isError,
-    error: useMock ? null : error,
-    refetch,
-  }
+  return { campaign, isLoading, isError, error, refetch: fetchCampaign }
 }

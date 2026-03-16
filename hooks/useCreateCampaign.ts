@@ -1,15 +1,14 @@
 'use client'
 import { useState } from 'react'
-import { useWriteContract, useConfig } from 'wagmi'
+import { useConfig } from 'wagmi'
 import { parseUnits } from 'viem'
-import { waitForTransactionReceipt } from 'wagmi/actions'
 import { CONTRACT_ABI, CONTRACT_ADDRESS, getTxUrl } from '@/lib/contract'
+import { sendContractWrite, waitForTx, getErrorMessage, isUserRejection } from '@/lib/walletClient'
 import { toast } from 'sonner'
 import type { CreateCampaignFormData } from '@/lib/validations'
 
 export function useCreateCampaign() {
   const config = useConfig()
-  const { writeContractAsync } = useWriteContract()
   const [isPending, setIsPending] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [hash, setHash] = useState<`0x${string}` | undefined>()
@@ -24,7 +23,8 @@ export function useCreateCampaign() {
         description: "Confirm the transaction in MetaMask",
       })
 
-      const txHash = await writeContractAsync({
+      const txHash = await sendContractWrite({
+        config,
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'createCampaign',
@@ -41,7 +41,7 @@ export function useCreateCampaign() {
         description: "Transaction submitted, mining...",
       })
 
-      await waitForTransactionReceipt(config, { hash: txHash })
+      await waitForTx(config, txHash)
 
       setHash(txHash)
       setIsSuccess(true)
@@ -50,24 +50,19 @@ export function useCreateCampaign() {
         description: "Your campaign is now live on-chain",
         action: { label: "View Tx", onClick: () => window.open(getTxUrl(txHash), '_blank') },
       })
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('[useCreateCampaign] error:', error)
       toast.dismiss('create-campaign')
-      if (error instanceof Error) {
-        if (error.message.includes('rejected') || error.message.includes('denied') || error.message.includes('User rejected')) {
-          toast.error("Transaction cancelled")
-          return
-        }
-        toast.error("Failed to create campaign", { description: error.message })
+
+      if (isUserRejection(error)) {
+        toast.error("Transaction cancelled")
+      } else {
+        toast.error("Failed to create campaign", { description: getErrorMessage(error).slice(0, 300) })
       }
     } finally {
       setIsPending(false)
     }
   }
 
-  return {
-    createCampaign,
-    isPending,
-    isSuccess,
-    hash,
-  }
+  return { createCampaign, isPending, isSuccess, hash }
 }

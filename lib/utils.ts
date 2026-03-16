@@ -1,4 +1,4 @@
-import { formatUnits } from 'viem'
+import { formatUnits } from 'ethers'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 

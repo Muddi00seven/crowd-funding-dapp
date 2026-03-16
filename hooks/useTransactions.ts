@@ -1,24 +1,40 @@
-import { useReadContract } from 'wagmi'
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from '@/lib/contract'
-import { MOCK_CONTRIBUTIONS } from '@/lib/mockData'
+'use client'
+import { useState, useEffect, useCallback } from 'react'
+import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import type { Contribution } from '@/types'
 
-export function useTransactions(campaignId: bigint) {
-  const useMock = !CONTRACT_ADDRESS || CONTRACT_ADDRESS === ('' as `0x${string}`)
-
-  const { data, isLoading, isError, error, refetch } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    functionName: 'getContributions',
-    args: [campaignId],
-    query: { enabled: !useMock },
-  })
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseContribution(r: any): Contribution {
   return {
-    contributions: useMock ? MOCK_CONTRIBUTIONS : (data as Contribution[] | undefined),
-    isLoading: useMock ? false : isLoading,
-    isError: useMock ? false : isError,
-    error: useMock ? null : error,
-    refetch,
+    contributor: r[0] as string,
+    amount: r[1] as bigint,
+    txHash: r[2] as string,
+    timestamp: r[3] as bigint,
   }
+}
+
+export function useTransactions(campaignId: bigint) {
+  const useMock = !CONTRACT_ADDRESS
+  const [contributions, setContributions] = useState<Contribution[]>([])
+  const [isLoading, setIsLoading] = useState(!useMock)
+
+  const fetchContributions = useCallback(async () => {
+    if (useMock) { setIsLoading(false); return }
+    setIsLoading(true)
+    try {
+      const provider = getReadProvider()
+      const contract = getCrowdFundingContract(provider)
+      const results = await contract.getContributions(campaignId)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setContributions((results as any[]).map(parseContribution))
+    } catch (e) {
+      console.error('useTransactions:', e)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [useMock, campaignId])
+
+  useEffect(() => { fetchContributions() }, [fetchContributions])
+
+  return { contributions, isLoading, refetch: fetchContributions }
 }

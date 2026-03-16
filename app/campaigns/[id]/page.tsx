@@ -12,7 +12,7 @@ interface CampaignPageProps {
 
 export default function CampaignPage({ params }: CampaignPageProps) {
   const campaignId = BigInt(params.id)
-  const { campaign, isLoading, isError, error } = useCampaign(campaignId)
+  const { campaign, isLoading, isError, error, refetch } = useCampaign(campaignId)
 
   return (
     <>
@@ -33,6 +33,7 @@ export default function CampaignPage({ params }: CampaignPageProps) {
             isLoading={isLoading}
             isError={isError}
             error={error as Error | null}
+            refetchCampaign={refetch}
           />
         </main>
       </PageWrapper>
