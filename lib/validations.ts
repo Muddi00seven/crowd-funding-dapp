@@ -3,39 +3,39 @@ import { z } from 'zod'
 export const contributeSchema = z.object({
   amount: z
     .string()
-    .min(1, "Amount likhna zaroori hai")
+    .min(1, "Amount is required")
     .refine((val) => !isNaN(parseFloat(val)), {
-      message: "Valid number dalo"
+      message: "Enter a valid number"
     })
     .refine((val) => parseFloat(val) >= 1, {
-      message: "Minimum 1 USDT contribute kar sakte ho"
+      message: "Minimum contribution is 1 USDT"
     })
     .refine((val) => parseFloat(val) <= 100000, {
-      message: "Maximum 100,000 USDT ek transaction mein"
+      message: "Maximum 100,000 USDT per transaction"
     }),
 })
 
 export const createCampaignSchema = z.object({
   title: z
     .string()
-    .min(5, "Title kam se kam 5 characters ka hona chahiye")
-    .max(100, "Title zyada lamba hai (max 100 chars)"),
+    .min(5, "Title must be at least 5 characters")
+    .max(100, "Title is too long (max 100 chars)"),
   description: z
     .string()
-    .min(20, "Description mein zyada detail dalo (min 20 chars)")
-    .max(1000, "Description zyada lamba hai (max 1000 chars)"),
+    .min(20, "Please provide more detail (min 20 chars)")
+    .max(1000, "Description is too long (max 1000 chars)"),
   goalUsdt: z
     .string()
     .refine((val) => parseFloat(val) >= 1, {
-      message: "Goal kam se kam 1 USDT hona chahiye"
+      message: "Goal must be at least 1 USDT"
     })
     .refine((val) => parseFloat(val) <= 10000000, {
-      message: "Goal zyada nahi ho sakta (max 10,000,000 USDT)"
+      message: "Goal cannot exceed 10,000,000 USDT"
     }),
   durationDays: z
     .number()
-    .min(1, "Minimum 1 din ka campaign hona chahiye")
-    .max(365, "Maximum 365 din"),
+    .min(1, "Campaign must run for at least 1 day")
+    .max(365, "Maximum duration is 365 days"),
 })
 
 export type ContributeFormData = z.infer<typeof contributeSchema>

@@ -1,16 +1,17 @@
 import { createConfig, http } from 'wagmi'
 import { mainnet, sepolia } from 'wagmi/chains'
-import { walletConnect, injected, metaMask } from 'wagmi/connectors'
+import { walletConnect, injected } from 'wagmi/connectors'
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+
+// Only include WalletConnect if a project ID is configured
+const connectors = projectId
+  ? [injected(), walletConnect({ projectId })]
+  : [injected()]
 
 export const config = createConfig({
   chains: [sepolia, mainnet],
-  connectors: [
-    metaMask(),
-    injected(),
-    walletConnect({ projectId }),
-  ],
+  connectors,
   transports: {
     [sepolia.id]: http(),
     [mainnet.id]: http(),

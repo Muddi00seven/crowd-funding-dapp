@@ -13,7 +13,7 @@ export default function Home() {
               Decentralized Crowdfunding
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Fund projects directly on the blockchain. No middlemen, full transparency, smart contract powered.
+              Fund projects directly on the blockchain with USDT. No middlemen, full transparency, smart contract powered.
             </p>
           </div>
 

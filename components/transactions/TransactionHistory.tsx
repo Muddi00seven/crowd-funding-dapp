@@ -35,7 +35,7 @@ export function TransactionHistory({ campaignId }: TransactionHistoryProps) {
     return (
       <div className="space-y-2">
         <h3 className="font-semibold text-lg">Contributions</h3>
-        <p className="text-sm text-muted-foreground">Abhi tak koi contribution nahi ✨</p>
+        <p className="text-sm text-muted-foreground">No contributions yet ✨</p>
       </div>
     )
   }

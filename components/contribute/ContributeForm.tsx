@@ -54,21 +54,19 @@ export function ContributeForm({ campaignId, isExpired }: ContributeFormProps) {
 
       {!isConnected && (
         <p className="text-sm text-muted-foreground">
-          Contribute karne ke liye wallet connect karo
+          Connect your wallet to contribute
         </p>
       )}
 
       {isExpired && (
         <p className="text-sm text-destructive">
-          Yeh campaign expire ho gayi hai
+          This campaign has expired
         </p>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="amount">Amount (USDT)</Label>
-          </div>
+          <Label htmlFor="amount">Amount (USDT)</Label>
           <Input
             id="amount"
             type="number"

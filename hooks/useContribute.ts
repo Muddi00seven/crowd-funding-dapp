@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useConfig } from 'wagmi'
+import { useWriteContract, useConfig } from 'wagmi'
 import { parseUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { CONTRACT_ABI, CONTRACT_ADDRESS, USDT_ABI, USDT_TOKEN_ADDRESS, getTxUrl } from '@/lib/contract'
@@ -23,9 +23,9 @@ export function useContribute() {
 
       // Step 1: Approve USDT spend
       setIsApproving(true)
-      toast.loading("Step 1/2: USDT approve ho rahi hai...", {
+      toast.loading("Step 1/2: Approving USDT...", {
         id: 'contribute-pending',
-        description: "MetaMask mein approve confirm karo",
+        description: "Confirm the approval in MetaMask",
       })
 
       const approveHash = await writeContractAsync({
@@ -39,9 +39,9 @@ export function useContribute() {
       setIsApproving(false)
 
       // Step 2: Contribute
-      toast.loading("Step 2/2: Contribution ho rahi hai...", {
+      toast.loading("Step 2/2: Submitting contribution...", {
         id: 'contribute-pending',
-        description: "MetaMask mein transaction confirm karo",
+        description: "Confirm the transaction in MetaMask",
       })
 
       const contributeHash = await writeContractAsync({
@@ -56,8 +56,8 @@ export function useContribute() {
       setHash(contributeHash)
       setIsSuccess(true)
       toast.dismiss('contribute-pending')
-      toast.success("USDT contribution successful!", {
-        description: `${amountUsdt} USDT contributed!`,
+      toast.success("Contribution successful!", {
+        description: `${amountUsdt} USDT contributed`,
         action: { label: "View Tx", onClick: () => window.open(getTxUrl(contributeHash), '_blank') },
       })
     } catch (error) {
@@ -65,14 +65,14 @@ export function useContribute() {
       setIsApproving(false)
       if (error instanceof Error) {
         if (error.message.includes('rejected') || error.message.includes('denied') || error.message.includes('User rejected')) {
-          toast.error("Transaction cancel ho gayi")
+          toast.error("Transaction cancelled")
           return
         }
         if (error.message.includes('insufficient') || error.message.includes('Insufficient')) {
-          toast.error("Insufficient balance", { description: "Wallet mein USDT kam hai" })
+          toast.error("Insufficient balance", { description: "Not enough USDT in your wallet" })
           return
         }
-        toast.error("Kuch ghalat hua", { description: error.message })
+        toast.error("Transaction failed", { description: error.message })
       }
     } finally {
       setIsPending(false)

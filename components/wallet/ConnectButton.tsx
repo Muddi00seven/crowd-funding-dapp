@@ -19,14 +19,31 @@ import { useTokenBalance } from '@/hooks/useTokenBalance'
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount()
-  const { connect, connectors, isPending } = useConnect()
+  const { connect, connectors, isPending, error: connectError } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
   const chainId = useChainId()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const { formatted: balanceFormatted } = useTokenBalance()
 
   const isCorrectNetwork = chainId === SUPPORTED_CHAIN_ID
+
+  const handleConnect = (connector: (typeof connectors)[number]) => {
+    connect(
+      { connector },
+      {
+        onSuccess: () => setDialogOpen(false),
+        onError: (err) => {
+          if (err.message.includes('rejected') || err.message.includes('denied')) {
+            toast.error("Connection cancelled")
+          } else {
+            toast.error("Failed to connect wallet", { description: err.message })
+          }
+        },
+      }
+    )
+  }
 
   const copyAddress = () => {
     if (!address) return
@@ -38,27 +55,18 @@ export function ConnectButton() {
   // Not connected
   if (!isConnected) {
     return (
-      <Dialog>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.15 }}>
             <Button className="bg-primary hover:bg-primary/90" aria-label="Connect wallet">
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Connect Wallet
-                </>
-              )}
+              <Wallet className="w-4 h-4 mr-2" />
+              Connect Wallet
             </Button>
           </motion.div>
         </DialogTrigger>
         <DialogContent className="bg-card border-border sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Wallet Select Karo</DialogTitle>
+            <DialogTitle>Select a Wallet</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
             {connectors.map((connector) => (
@@ -66,14 +74,22 @@ export function ConnectButton() {
                 key={connector.uid}
                 variant="outline"
                 className="w-full justify-start border-border hover:border-primary/50"
-                onClick={() => connect({ connector })}
+                onClick={() => handleConnect(connector)}
                 disabled={isPending}
                 aria-label={`Connect with ${connector.name}`}
               >
-                <Wallet className="w-4 h-4 mr-2" />
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Wallet className="w-4 h-4 mr-2" />
+                )}
                 {connector.name}
+                {isPending && <span className="ml-auto text-xs text-muted-foreground">Connecting...</span>}
               </Button>
             ))}
+            {connectError && (
+              <p className="text-xs text-destructive text-center">{connectError.message}</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

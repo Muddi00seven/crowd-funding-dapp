@@ -24,7 +24,7 @@ export function CampaignDetail({ campaign, isLoading, isError, error }: Campaign
   if (isError) {
     return (
       <div className="text-center py-16 text-destructive">
-        <p className="text-lg font-semibold">Campaign load nahi ho saka</p>
+        <p className="text-lg font-semibold">Failed to load campaign</p>
         <p className="text-sm text-muted-foreground mt-2">{error?.message}</p>
       </div>
     )
@@ -33,7 +33,7 @@ export function CampaignDetail({ campaign, isLoading, isError, error }: Campaign
   if (!campaign) {
     return (
       <div className="text-center py-16 text-muted-foreground">
-        <p className="text-lg">Campaign nahi mila</p>
+        <p className="text-lg">Campaign not found</p>
       </div>
     )
   }

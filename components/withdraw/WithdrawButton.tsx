@@ -76,7 +76,7 @@ export function WithdrawButton({ campaign }: WithdrawButtonProps) {
           </TooltipTrigger>
           {!goalReached && (
             <TooltipContent>
-              <p>Goal abhi reach nahi hua</p>
+              <p>Goal has not been reached yet</p>
             </TooltipContent>
           )}
         </Tooltip>
@@ -85,9 +85,9 @@ export function WithdrawButton({ campaign }: WithdrawButtonProps) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle>Funds Withdraw Karo</DialogTitle>
+            <DialogTitle>Withdraw Funds</DialogTitle>
             <DialogDescription>
-              Kya aap {formatUsdt(campaign.raised)} USDT withdraw karna chahte hain?
+              Are you sure you want to withdraw {formatUsdt(campaign.raised)} USDT?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

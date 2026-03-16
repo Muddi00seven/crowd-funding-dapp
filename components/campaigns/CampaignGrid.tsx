@@ -33,7 +33,7 @@ export function CampaignGrid() {
   if (isError) {
     return (
       <div className="text-center py-16 text-destructive">
-        <p className="text-lg font-semibold">Kuch ghalat hua</p>
+        <p className="text-lg font-semibold">Something went wrong</p>
         <p className="text-sm text-muted-foreground mt-2">{error?.message}</p>
       </div>
     )
@@ -42,8 +42,8 @@ export function CampaignGrid() {
   if (!campaigns || campaigns.length === 0) {
     return (
       <div className="text-center py-16 text-muted-foreground">
-        <p className="text-lg">Abhi tak koi campaign nahi</p>
-        <p className="text-sm mt-2">Pehla campaign create karo!</p>
+        <p className="text-lg">No campaigns yet</p>
+        <p className="text-sm mt-2">Be the first to create one!</p>
       </div>
     )
   }

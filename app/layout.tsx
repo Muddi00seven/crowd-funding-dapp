@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google'
-import { Providers } from '@/components/Providers'
+import dynamic from 'next/dynamic'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -12,6 +12,12 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
 })
+
+// ssr: false prevents WalletConnect from accessing indexedDB during server render
+const Providers = dynamic(
+  () => import('@/components/Providers').then((mod) => mod.Providers),
+  { ssr: false }
+)
 
 export const metadata: Metadata = {
   title: 'ChainFund — Decentralized Crowdfunding',
