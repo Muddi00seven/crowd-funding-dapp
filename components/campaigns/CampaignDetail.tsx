@@ -10,6 +10,8 @@ import { WithdrawButton } from '@/components/withdraw/WithdrawButton'
 import { TransactionHistory } from '@/components/transactions/TransactionHistory'
 import { formatUsdt, getDaysLeft, truncateAddress } from '@/lib/utils'
 import { getAddressUrl } from '@/lib/contract'
+import { useWeb3 } from '@/hooks/useWeb3'
+import { useTransactions } from '@/hooks/useTransactions'
 import type { Campaign } from '@/types'
 
 interface CampaignDetailProps {
@@ -22,6 +24,13 @@ interface CampaignDetailProps {
 
 export function CampaignDetail({ campaign, isLoading, isError, error, refetchCampaign }: CampaignDetailProps) {
   const [refreshKey, setRefreshKey] = useState(0)
+  const { address } = useWeb3()
+  const { contributions } = useTransactions(campaign?.id ?? 0n)
+
+  const isCreator = !!address && !!campaign && address.toLowerCase() === campaign.creator.toLowerCase()
+  const hasContributed = !!address && contributions.some(
+    (c) => c.contributor.toLowerCase() === address.toLowerCase()
+  )
 
   const handleSuccess = useCallback(() => {
     const refreshDelaysMs = [0, 900, 2000, 4000, 7000]
@@ -117,7 +126,13 @@ export function CampaignDetail({ campaign, isLoading, isError, error, refetchCam
 
         {/* Sidebar */}
         <div className="space-y-4">
-          <ContributeForm campaignId={campaign.id} isExpired={isExpired} onSuccess={handleSuccess} />
+          <ContributeForm
+            campaignId={campaign.id}
+            isExpired={isExpired}
+            isCreator={isCreator}
+            hasContributed={hasContributed}
+            onSuccess={handleSuccess}
+          />
           <WithdrawButton campaign={campaign} onSuccess={handleSuccess} />
         </div>
       </div>

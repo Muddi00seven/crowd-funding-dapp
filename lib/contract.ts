@@ -26,29 +26,9 @@ export function getAddressUrl(address: string) {
  * Uses direct eth_getTransactionReceipt calls (no eth_subscribe needed)
  * so it works reliably with MetaMask / AppKit injected providers.
  */
-/**
- * Poll for a tx receipt using the public JsonRpcProvider (not the wallet provider).
- * The wallet's BrowserProvider (AppKit) does not reliably support receipt polling —
- * it resolves tx.wait() immediately. The public RPC node does proper polling.
- */
-export async function pollForReceipt(
-  hash: string,
-  intervalMs = 3_000,
-  timeoutMs = 180_000,
-): Promise<void> {
-  const provider = getReadProvider()
-  const deadline = Date.now() + timeoutMs
-  while (Date.now() < deadline) {
-    try {
-      const receipt = await provider.getTransactionReceipt(hash)
-      if (receipt !== null) return
-    } catch {
-      // ignore transient RPC errors, keep polling
-    }
-    await new Promise<void>(resolve => setTimeout(resolve, intervalMs))
-  }
-  throw new Error('Transaction confirmation timeout')
-}
+// 
+// Use tx.wait(1) on the transaction response directly rather than polling the public RPC
+// 
 
 export const USDT_ABI = [
   'function balanceOf(address account) view returns (uint256)',

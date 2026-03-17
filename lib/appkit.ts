@@ -12,6 +12,12 @@ createAppKit({
   networks: [sepolia],
   defaultNetwork: sepolia,
   projectId,
+  // Keep wallet selection deterministic: single injected provider path only.
+  enableInjected: true,
+  enableEIP6963: true,
+  enableCoinbase: false,
+  enableWalletConnect: false,
+  allWallets: 'HIDE',
   metadata: {
     name: 'ChainFund',
     description: 'Decentralized Crowdfunding on Blockchain',
@@ -20,6 +26,7 @@ createAppKit({
   },
   features: {
     analytics: false,
+    allWallets: false,
     email: false,
     socials: [],
   },

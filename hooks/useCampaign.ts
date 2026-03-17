@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import { MOCK_CAMPAIGNS } from '@/lib/mockData'
 import type { Campaign } from '@/types'
+import { useTransactionStore } from '@/store/transactionStore'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseCampaign(r: any): Campaign {
@@ -45,7 +46,9 @@ export function useCampaign(campaignId: bigint) {
     }
   }, [useMock, campaignId])
 
-  useEffect(() => { fetchCampaign() }, [fetchCampaign])
+  const refreshTrigger = useTransactionStore((state) => state.refreshTrigger)
+
+  useEffect(() => { fetchCampaign() }, [fetchCampaign, refreshTrigger])
 
   return { campaign, isLoading, isError, error, refetch: fetchCampaign }
 }

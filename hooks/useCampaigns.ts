@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import { MOCK_CAMPAIGNS } from '@/lib/mockData'
 import type { Campaign } from '@/types'
+import { useTransactionStore } from '@/store/transactionStore'
 
 function parseCampaign(r: Record<number, unknown>): Campaign {
   return {
@@ -22,10 +23,13 @@ export function useCampaigns() {
   const useMock = !CONTRACT_ADDRESS
   const [campaigns, setCampaigns] = useState<Campaign[]>(useMock ? MOCK_CAMPAIGNS : [])
   const [isLoading, setIsLoading] = useState(!useMock)
+  const [isError, setIsError] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
   const fetchCampaigns = useCallback(async () => {
     if (useMock) return
     setIsLoading(true)
+    setIsError(false)
     try {
       const provider = getReadProvider()
       const contract = getCrowdFundingContract(provider)
@@ -38,12 +42,16 @@ export function useCampaigns() {
       setCampaigns(results.map((r: any) => parseCampaign(r)))
     } catch (e) {
       console.error('useCampaigns:', e)
+      setIsError(true)
+      setError(e as Error)
     } finally {
       setIsLoading(false)
     }
   }, [useMock])
 
-  useEffect(() => { fetchCampaigns() }, [fetchCampaigns])
+  const refreshTrigger = useTransactionStore((state) => state.refreshTrigger)
 
-  return { campaigns, isLoading, refetch: fetchCampaigns }
+  useEffect(() => { fetchCampaigns() }, [fetchCampaigns, refreshTrigger])
+
+  return { campaigns, isLoading, isError, error, refetch: fetchCampaigns }
 }

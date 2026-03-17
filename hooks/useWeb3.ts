@@ -21,7 +21,7 @@ export function useWeb3() {
     chainId,
     isCorrectNetwork,
     walletProvider,
-    openModal: () => open(),
+    openModal: (options?: { view?: 'Account' | 'Connect' | 'Networks' | 'ApproveTransaction' | 'OnRampProviders' }) => open(options),
     disconnect,
   }
 }

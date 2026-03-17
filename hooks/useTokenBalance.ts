@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getUsdtContract, USDT_TOKEN_ADDRESS, CONTRACT_ADDRESS, getReadProvider } from '@/lib/contract'
 import { formatUsdt } from '@/lib/utils'
 import { useWeb3 } from '@/hooks/useWeb3'
+import { useTransactionStore } from '@/store/transactionStore'
 
 export function useTokenBalance() {
   const { address, isConnected } = useWeb3()
@@ -26,7 +27,9 @@ export function useTokenBalance() {
     }
   }, [address, isConnected, hasToken])
 
-  useEffect(() => { fetchBalances() }, [fetchBalances])
+  const refreshTrigger = useTransactionStore((state) => state.refreshTrigger)
+
+  useEffect(() => { fetchBalances() }, [fetchBalances, refreshTrigger])
 
   return {
     balance,

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import type { Contribution } from '@/types'
+import { useTransactionStore } from '@/store/transactionStore'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseContribution(r: any): Contribution {
@@ -39,7 +40,9 @@ export function useTransactions(campaignId: bigint) {
     }
   }, [useMock, campaignId])
 
-  useEffect(() => { fetchContributions() }, [fetchContributions])
+  const refreshTrigger = useTransactionStore((state) => state.refreshTrigger)
+
+  useEffect(() => { fetchContributions() }, [fetchContributions, refreshTrigger])
 
   return { contributions, isLoading, isError, error, refetch: fetchContributions }
 }

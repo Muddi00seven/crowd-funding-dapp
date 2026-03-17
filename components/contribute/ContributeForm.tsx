@@ -15,10 +15,12 @@ import { BlockchainLoadingScreen } from '@/components/transactions/BlockchainLoa
 interface ContributeFormProps {
   campaignId: bigint
   isExpired: boolean
+  isCreator: boolean
+  hasContributed: boolean
   onSuccess?: () => void
 }
 
-export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeFormProps) {
+export function ContributeForm({ campaignId, isExpired, isCreator, hasContributed, onSuccess }: ContributeFormProps) {
   const { isConnected } = useWeb3()
   const { contribute, loading } = useContribute()
   const { formatted: balanceFormatted, refetch: refetchBalance } = useTokenBalance()
@@ -73,6 +75,14 @@ export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeF
           <p className="text-sm text-destructive">This campaign has expired</p>
         )}
 
+        {isCreator && (
+          <p className="text-sm text-muted-foreground">You are the creator of this campaign</p>
+        )}
+
+        {!isCreator && hasContributed && (
+          <p className="text-sm text-success">You have already contributed to this campaign</p>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="amount">Amount (USDT)</Label>
@@ -84,7 +94,7 @@ export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeF
               max="100000"
               placeholder="100"
               className="bg-muted border-border"
-              disabled={!isConnected || isExpired || loading}
+              disabled={!isConnected || isExpired || loading || isCreator || hasContributed}
               aria-label="Contribution amount in USDT"
               {...register('amount')}
             />
@@ -96,7 +106,7 @@ export function ContributeForm({ campaignId, isExpired, onSuccess }: ContributeF
           <ContributeButton
             isPending={loading}
             isApproving={false}
-            disabled={!isConnected || isExpired}
+            disabled={!isConnected || isExpired || isCreator || hasContributed}
           />
         </form>
       </motion.div>
