@@ -1,8 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { BrowserProvider } from 'ethers'
-import type { Eip1193Provider } from 'ethers'
-import { useAppKitProvider } from '@reown/appkit/react'
 import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import { MOCK_CAMPAIGNS } from '@/lib/mockData'
 import type { Campaign } from '@/types'
@@ -23,7 +20,6 @@ function parseCampaign(r: Record<number, unknown>): Campaign {
 
 export function useCampaigns() {
   const useMock = !CONTRACT_ADDRESS
-  const { walletProvider } = useAppKitProvider<Eip1193Provider>('eip155')
   const [campaigns, setCampaigns] = useState<Campaign[]>(useMock ? MOCK_CAMPAIGNS : [])
   const [isLoading, setIsLoading] = useState(!useMock)
 
@@ -31,9 +27,7 @@ export function useCampaigns() {
     if (useMock) return
     setIsLoading(true)
     try {
-      const provider = walletProvider
-        ? new BrowserProvider(walletProvider)
-        : getReadProvider()
+      const provider = getReadProvider()
       const contract = getCrowdFundingContract(provider)
       const count = Number(await contract.getCampaignCount())
       if (count === 0) { setCampaigns([]); return }
@@ -47,7 +41,7 @@ export function useCampaigns() {
     } finally {
       setIsLoading(false)
     }
-  }, [useMock, walletProvider])
+  }, [useMock])
 
   useEffect(() => { fetchCampaigns() }, [fetchCampaigns])
 

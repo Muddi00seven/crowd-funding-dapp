@@ -24,14 +24,13 @@ export function CampaignDetail({ campaign, isLoading, isError, error, refetchCam
   const [refreshKey, setRefreshKey] = useState(0)
 
   const handleSuccess = useCallback(() => {
-    void Promise.resolve(refetchCampaign())
-    setRefreshKey((k) => k + 1)
-
-    // Some RPC endpoints can lag briefly after confirmation.
-    setTimeout(() => {
-      void Promise.resolve(refetchCampaign())
-      setRefreshKey((k) => k + 1)
-    }, 1200)
+    const refreshDelaysMs = [0, 900, 2000, 4000, 7000]
+    for (const delayMs of refreshDelaysMs) {
+      setTimeout(() => {
+        void Promise.resolve(refetchCampaign())
+        setRefreshKey((k) => k + 1)
+      }, delayMs)
+    }
   }, [refetchCampaign])
 
   if (isLoading) return <CampaignSkeleton />

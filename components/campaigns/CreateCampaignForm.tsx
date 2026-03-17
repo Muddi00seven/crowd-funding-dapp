@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useWeb3 } from '@/hooks/useWeb3'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Loader2, Rocket, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,7 @@ import { BlockchainLoadingScreen } from '@/components/transactions/BlockchainLoa
 
 export function CreateCampaignForm() {
   const { isConnected } = useWeb3()
-  const { createCampaign, step, isPending, isBlockchainConfirming, isSuccess } = useCreateCampaign()
+  const { createCampaign, loading, isSuccess } = useCreateCampaign()
   const router = useRouter()
 
   const {
@@ -41,9 +41,8 @@ export function CreateCampaignForm() {
 
   return (
     <>
-      {/* Full-screen overlay while tx is being confirmed on blockchain */}
       <BlockchainLoadingScreen
-        open={isBlockchainConfirming}
+        open={loading}
         title="Creating your campaign..."
         description="Waiting for on-chain confirmation"
       />
@@ -54,27 +53,7 @@ export function CreateCampaignForm() {
         transition={{ duration: 0.4, ease: 'easeOut' }}
         className="max-w-2xl mx-auto"
       >
-        <div className="rounded-xl border border-border bg-card p-8 space-y-6 relative overflow-hidden">
-          {/* In-form overlay — shown while MetaMask popup is open */}
-          <AnimatePresence>
-            {step === 'signing' && (
-              <motion.div
-                key="create-metamask-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-card/90 backdrop-blur-sm"
-              >
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <div className="text-center space-y-1">
-                  <p className="font-semibold text-sm">Confirm Campaign Creation</p>
-                  <p className="text-xs text-muted-foreground">Check MetaMask to confirm</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
+        <div className="rounded-xl border border-border bg-card p-8 space-y-6">
           {!isConnected && (
             <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4">
               <Info className="w-4 h-4 text-warning mt-0.5 shrink-0" />
@@ -83,14 +62,13 @@ export function CreateCampaignForm() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Campaign Title</Label>
               <Input
                 id="title"
                 placeholder="e.g. Solar Energy for Rural Schools"
                 className="bg-muted border-border"
-                disabled={!isConnected || isPending}
+                disabled={!isConnected || loading}
                 aria-label="Campaign title"
                 {...register('title')}
               />
@@ -99,7 +77,6 @@ export function CreateCampaignForm() {
               )}
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <textarea
@@ -107,7 +84,7 @@ export function CreateCampaignForm() {
                 rows={5}
                 placeholder="Describe your campaign, its goals, and how the funds will be used..."
                 className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
-                disabled={!isConnected || isPending}
+                disabled={!isConnected || loading}
                 aria-label="Campaign description"
                 {...register('description')}
               />
@@ -116,7 +93,6 @@ export function CreateCampaignForm() {
               )}
             </div>
 
-            {/* Goal + Duration row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="goalUsdt">Funding Goal (USDT)</Label>
@@ -127,7 +103,7 @@ export function CreateCampaignForm() {
                   min="1"
                   placeholder="10000"
                   className="bg-muted border-border"
-                  disabled={!isConnected || isPending}
+                  disabled={!isConnected || loading}
                   aria-label="Funding goal in USDT"
                   {...register('goalUsdt')}
                 />
@@ -145,7 +121,7 @@ export function CreateCampaignForm() {
                   max="365"
                   placeholder="30"
                   className="bg-muted border-border"
-                  disabled={!isConnected || isPending}
+                  disabled={!isConnected || loading}
                   aria-label="Campaign duration in days"
                   {...register('durationDays', { valueAsNumber: true })}
                 />
@@ -155,7 +131,6 @@ export function CreateCampaignForm() {
               </div>
             </div>
 
-            {/* Info box */}
             <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">How it works</p>
               <p>• Contributors send USDT directly to the smart contract</p>
@@ -163,22 +138,21 @@ export function CreateCampaignForm() {
               <p>• Only you (the creator) can withdraw once the goal is met</p>
             </div>
 
-            {/* Submit */}
             <motion.div
-              whileHover={{ scale: !isConnected || isPending ? 1 : 1.02 }}
+              whileHover={{ scale: !isConnected || loading ? 1 : 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ duration: 0.15 }}
             >
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={!isConnected || isPending}
+                disabled={!isConnected || loading}
                 aria-label="Create campaign"
               >
-                {isPending ? (
+                {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {step === 'signing' ? 'Waiting for MetaMask...' : 'Confirming on-chain...'}
+                    Processing...
                   </>
                 ) : (
                   <>

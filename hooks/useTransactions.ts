@@ -1,8 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { BrowserProvider } from 'ethers'
-import type { Eip1193Provider } from 'ethers'
-import { useAppKitProvider } from '@reown/appkit/react'
 import { getReadProvider, getCrowdFundingContract, CONTRACT_ADDRESS } from '@/lib/contract'
 import type { Contribution } from '@/types'
 
@@ -18,7 +15,6 @@ function parseContribution(r: any): Contribution {
 
 export function useTransactions(campaignId: bigint) {
   const useMock = !CONTRACT_ADDRESS
-  const { walletProvider } = useAppKitProvider<Eip1193Provider>('eip155')
   const [contributions, setContributions] = useState<Contribution[]>([])
   const [isLoading, setIsLoading] = useState(!useMock)
   const [isError, setIsError] = useState(false)
@@ -29,9 +25,7 @@ export function useTransactions(campaignId: bigint) {
     setIsLoading(true)
     setIsError(false)
     try {
-      const provider = walletProvider
-        ? new BrowserProvider(walletProvider)
-        : getReadProvider()
+      const provider = getReadProvider()
       const contract = getCrowdFundingContract(provider)
       const results = await contract.getContributions(campaignId)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +37,7 @@ export function useTransactions(campaignId: bigint) {
     } finally {
       setIsLoading(false)
     }
-  }, [useMock, campaignId, walletProvider])
+  }, [useMock, campaignId])
 
   useEffect(() => { fetchContributions() }, [fetchContributions])
 
