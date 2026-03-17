@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { parseUnits } from 'ethers'
 import { getCrowdFundingContract, getTxUrl } from '@/lib/contract'
 import { useWeb3 } from '@/hooks/useWeb3'
@@ -13,27 +13,34 @@ function isUserRejection(e: unknown): boolean {
   return msg.includes('rejected') || msg.includes('denied') || msg.includes('user rejected')
 }
 
-export type CreateStep = 'signing' | 'confirming' | null
+export type CreateStep =
+  | 'idle'
+  | 'signing'     // MetaMask open — user must confirm create tx
+  | 'confirming'  // tx submitted, waiting for on-chain confirmation
 
 export function useCreateCampaign() {
   const { getSigner, isConnected } = useWeb3()
-  const [isPending, setIsPending] = useState(false)
-  const [pendingStep, setPendingStep] = useState<CreateStep>(null)
+  const inFlightRef = useRef(false)
+  const [step, setStep] = useState<CreateStep>('idle')
   const [isSuccess, setIsSuccess] = useState(false)
-  const [hash, setHash] = useState<string | undefined>()
+
+  const isPending = step !== 'idle'
+  const isBlockchainConfirming = step === 'confirming'
 
   const createCampaign = async (data: CreateCampaignFormData): Promise<boolean> => {
-    if (!isConnected) return false
-    setIsPending(true)
-    setIsSuccess(false)
+    if (inFlightRef.current || !isConnected) return false
+    inFlightRef.current = true
 
     try {
       const signer = await getSigner()
       const contract = getCrowdFundingContract(signer)
 
-      // MetaMask open
-      setPendingStep('signing')
-      toast.loading('Creating campaign...', { id: 'create', description: 'Confirm in MetaMask' })
+      // ── MetaMask open ──
+      setStep('signing')
+      toast.loading('Create campaign', {
+        id: 'create',
+        description: 'Confirm the transaction in MetaMask',
+      })
 
       const tx = await contract.createCampaign(
         data.title,
@@ -41,11 +48,13 @@ export function useCreateCampaign() {
         parseUnits(data.goalUsdt, 6),
         BigInt(data.durationDays),
       )
-      setHash(tx.hash)
 
-      // Waiting for confirmation
-      setPendingStep('confirming')
-      toast.loading('Confirming campaign...', { id: 'create', description: 'Waiting for blockchain...' })
+      // ── Tx submitted — waiting for blockchain ──
+      setStep('confirming')
+      toast.loading('Confirming campaign...', {
+        id: 'create',
+        description: 'Waiting for on-chain confirmation',
+      })
       await tx.wait()
 
       setIsSuccess(true)
@@ -59,13 +68,12 @@ export function useCreateCampaign() {
       console.error('[useCreateCampaign]', e)
       toast.dismiss('create')
       if (isUserRejection(e)) toast.error('Transaction cancelled')
-      else toast.error('Failed to create campaign', { description: (e as { message?: string })?.message })
       return false
     } finally {
-      setIsPending(false)
-      setPendingStep(null)
+      setStep('idle')
+      inFlightRef.current = false
     }
   }
 
-  return { createCampaign, isPending, pendingStep, isSuccess, hash }
+  return { createCampaign, step, isPending, isBlockchainConfirming, isSuccess }
 }

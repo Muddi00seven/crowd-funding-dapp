@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useWeb3 } from '@/hooks/useWeb3'
 import { Loader2, DollarSign, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,14 +16,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useWithdraw } from '@/hooks/useWithdraw'
 import { formatUsdt } from '@/lib/utils'
 import type { Campaign } from '@/types'
+import { BlockchainLoadingScreen } from '@/components/transactions/BlockchainLoadingScreen'
 
 interface WithdrawButtonProps {
   campaign: Campaign
+  onSuccess?: () => void
 }
 
-export function WithdrawButton({ campaign }: WithdrawButtonProps) {
+export function WithdrawButton({ campaign, onSuccess }: WithdrawButtonProps) {
   const { address, isConnected } = useWeb3()
-  const { withdraw, isPending, isSuccess } = useWithdraw()
+  const { withdraw, step, isPending, isBlockchainConfirming, isSuccess } = useWithdraw()
   const [open, setOpen] = useState(false)
 
   const isCreator = isConnected && address?.toLowerCase() === campaign.creator.toLowerCase()
@@ -43,14 +45,42 @@ export function WithdrawButton({ campaign }: WithdrawButtonProps) {
 
   return (
     <TooltipProvider>
-      <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+      {/* Full-screen overlay while withdraw tx is being confirmed on-chain */}
+      <BlockchainLoadingScreen
+        open={isBlockchainConfirming}
+        title="Withdrawal in progress..."
+        description="Waiting for on-chain confirmation"
+      />
+
+      <div className="rounded-xl border border-border bg-card p-6 space-y-3 relative overflow-hidden">
         <h3 className="font-semibold">Withdraw Funds</h3>
+
+        {/* In-card overlay — shown while MetaMask popup is open */}
+        <AnimatePresence>
+          {step === 'signing' && (
+            <motion.div
+              key="withdraw-metamask-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-card/90 backdrop-blur-sm"
+            >
+              <Loader2 className="w-8 h-8 animate-spin text-success" />
+              <div className="text-center space-y-1">
+                <p className="font-semibold text-sm">Confirm Withdrawal</p>
+                <p className="text-xs text-muted-foreground">Check MetaMask to confirm</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="block">
               <motion.div
-                whileHover={{ scale: goalReached ? 1.02 : 1 }}
-                whileTap={{ scale: goalReached ? 0.97 : 1 }}
+                whileHover={{ scale: goalReached && !isPending ? 1.02 : 1 }}
+                whileTap={{ scale: goalReached && !isPending ? 0.97 : 1 }}
                 transition={{ duration: 0.15 }}
               >
                 <Button
@@ -98,7 +128,8 @@ export function WithdrawButton({ campaign }: WithdrawButtonProps) {
               className="bg-success hover:bg-success/90 text-white"
               onClick={async () => {
                 setOpen(false)
-                await withdraw(campaign.id)
+                const success = await withdraw(campaign.id)
+                if (success) onSuccess?.()
               }}
               disabled={isPending}
             >

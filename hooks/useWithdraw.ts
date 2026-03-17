@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { getCrowdFundingContract, getTxUrl } from '@/lib/contract'
 import { useWeb3 } from '@/hooks/useWeb3'
 import { toast } from 'sonner'
@@ -11,34 +11,43 @@ function isUserRejection(e: unknown): boolean {
   return msg.includes('rejected') || msg.includes('denied') || msg.includes('user rejected')
 }
 
-export type WithdrawStep = 'signing' | 'confirming' | null
+export type WithdrawStep =
+  | 'idle'
+  | 'signing'     // MetaMask open — user must confirm withdraw tx
+  | 'confirming'  // tx submitted, waiting for on-chain confirmation
 
 export function useWithdraw() {
   const { getSigner, isConnected } = useWeb3()
-  const [isPending, setIsPending] = useState(false)
-  const [pendingStep, setPendingStep] = useState<WithdrawStep>(null)
+  const inFlightRef = useRef(false)
+  const [step, setStep] = useState<WithdrawStep>('idle')
   const [isSuccess, setIsSuccess] = useState(false)
-  const [hash, setHash] = useState<string | undefined>()
+
+  const isPending = step !== 'idle'
+  const isBlockchainConfirming = step === 'confirming'
 
   const withdraw = async (campaignId: bigint): Promise<boolean> => {
-    if (!isConnected) return false
-    setIsPending(true)
-    setIsSuccess(false)
+    if (inFlightRef.current || !isConnected) return false
+    inFlightRef.current = true
 
     try {
       const signer = await getSigner()
       const contract = getCrowdFundingContract(signer)
 
-      // MetaMask open
-      setPendingStep('signing')
-      toast.loading('Withdrawing funds...', { id: 'withdraw', description: 'Confirm in MetaMask' })
+      // ── MetaMask open ──
+      setStep('signing')
+      toast.loading('Withdraw funds', {
+        id: 'withdraw',
+        description: 'Confirm the transaction in MetaMask',
+      })
 
       const tx = await contract.withdraw(campaignId)
-      setHash(tx.hash)
 
-      // Waiting for confirmation
-      setPendingStep('confirming')
-      toast.loading('Confirming withdrawal...', { id: 'withdraw', description: 'Waiting for blockchain...' })
+      // ── Tx submitted — waiting for blockchain ──
+      setStep('confirming')
+      toast.loading('Confirming withdrawal...', {
+        id: 'withdraw',
+        description: 'Waiting for on-chain confirmation',
+      })
       await tx.wait()
 
       setIsSuccess(true)
@@ -52,13 +61,12 @@ export function useWithdraw() {
       console.error('[useWithdraw]', e)
       toast.dismiss('withdraw')
       if (isUserRejection(e)) toast.error('Transaction cancelled')
-      else toast.error('Withdrawal failed', { description: (e as { message?: string })?.message })
       return false
     } finally {
-      setIsPending(false)
-      setPendingStep(null)
+      setStep('idle')
+      inFlightRef.current = false
     }
   }
 
-  return { withdraw, isPending, pendingStep, isSuccess, hash }
+  return { withdraw, step, isPending, isBlockchainConfirming, isSuccess }
 }

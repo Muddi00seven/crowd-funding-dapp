@@ -24,8 +24,14 @@ export function CampaignDetail({ campaign, isLoading, isError, error, refetchCam
   const [refreshKey, setRefreshKey] = useState(0)
 
   const handleSuccess = useCallback(() => {
-    refetchCampaign()
+    void Promise.resolve(refetchCampaign())
     setRefreshKey((k) => k + 1)
+
+    // Some RPC endpoints can lag briefly after confirmation.
+    setTimeout(() => {
+      void Promise.resolve(refetchCampaign())
+      setRefreshKey((k) => k + 1)
+    }, 1200)
   }, [refetchCampaign])
 
   if (isLoading) return <CampaignSkeleton />
@@ -113,7 +119,7 @@ export function CampaignDetail({ campaign, isLoading, isError, error, refetchCam
         {/* Sidebar */}
         <div className="space-y-4">
           <ContributeForm campaignId={campaign.id} isExpired={isExpired} onSuccess={handleSuccess} />
-          <WithdrawButton campaign={campaign} />
+          <WithdrawButton campaign={campaign} onSuccess={handleSuccess} />
         </div>
       </div>
     </motion.div>
