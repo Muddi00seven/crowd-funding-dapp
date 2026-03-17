@@ -23,7 +23,7 @@ export function CampaignCard({ campaign, isLoading = false }: CampaignCardProps)
 
   return (
     <motion.div
-      className="rounded-xl border border-border bg-card p-6 space-y-4 hover:border-primary/50 transition-colors flex flex-col"
+      className="rounded-xl border border-border bg-card p-6 space-y-4 hover:border-primary/50 transition-colors flex flex-col h-full"
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
     >
@@ -47,7 +47,7 @@ export function CampaignCard({ campaign, isLoading = false }: CampaignCardProps)
         ) : null}
       </div>
 
-      <p className="text-muted-foreground text-sm line-clamp-2">{campaign.description}</p>
+      <p className="text-muted-foreground text-sm line-clamp-2 flex-1">{campaign.description}</p>
 
       <ProgressBar raised={campaign.raised} goal={campaign.goal} />
 
@@ -71,10 +71,10 @@ export function CampaignCard({ campaign, isLoading = false }: CampaignCardProps)
         <Button
           asChild
           className="w-full bg-primary hover:bg-primary/90 gap-2"
-          disabled={isExpired && !goalReached}
+          disabled={isExpired || goalReached}
         >
           <Link href={`/campaigns/${campaign.id}`}>
-            {isExpired ? 'View Campaign' : 'Contribute'}
+            {isExpired ? 'View Campaign' : goalReached ? 'Goal Reached' : 'Contribute'}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </Button>

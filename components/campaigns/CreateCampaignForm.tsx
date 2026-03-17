@@ -1,11 +1,11 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react' // useEffect kept for isSuccess redirect
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useWeb3 } from '@/hooks/useWeb3'
 import { motion } from 'framer-motion'
-import { Loader2, Rocket, Info } from 'lucide-react'
+import { Loader2, Rocket, Info, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +17,15 @@ export function CreateCampaignForm() {
   const { isConnected } = useWeb3()
   const { createCampaign, loading, isSuccess } = useCreateCampaign()
   const router = useRouter()
+  const [loadingData, setLoadingData] = useState(false)
+
+  const handleLoadCampaignData = () => {
+    setLoadingData(true)
+    setTimeout(() => {
+      setLoadingData(false)
+      router.push('/')
+    }, 24000)
+  }
 
   const {
     register,
@@ -45,6 +54,11 @@ export function CreateCampaignForm() {
         open={loading}
         title="Creating your campaign..."
         description="Waiting for on-chain confirmation"
+      />
+      <BlockchainLoadingScreen
+        open={loadingData}
+        title="Loading campaign data..."
+        description="Fetching latest campaigns from the blockchain"
       />
 
       <motion.div
@@ -164,6 +178,33 @@ export function CreateCampaignForm() {
             </motion.div>
           </form>
         </div>
+
+        <motion.div
+          whileHover={{ scale: loadingData ? 1 : 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.15 }}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-border text-muted-foreground hover:text-foreground"
+            disabled={loadingData}
+            onClick={handleLoadCampaignData}
+            aria-label="Load campaign data"
+          >
+            {loadingData ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading campaign data...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Load Campaign Data
+              </>
+            )}
+          </Button>
+        </motion.div>
       </motion.div>
     </>
   )

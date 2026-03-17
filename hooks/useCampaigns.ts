@@ -39,7 +39,7 @@ export function useCampaigns() {
         Array.from({ length: count }, (_, i) => contract.getCampaign(i))
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setCampaigns(results.map((r: any) => parseCampaign(r)))
+      setCampaigns(results.map((r: any) => parseCampaign(r)).reverse())
     } catch (e) {
       console.error('useCampaigns:', e)
       setIsError(true)

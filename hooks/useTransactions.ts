@@ -30,7 +30,7 @@ export function useTransactions(campaignId: bigint) {
       const contract = getCrowdFundingContract(provider)
       const results = await contract.getContributions(campaignId)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setContributions((results as any[]).map(parseContribution))
+      setContributions((results as any[]).map(parseContribution).reverse())
     } catch (e) {
       console.error('useTransactions:', e)
       setIsError(true)
