@@ -13,27 +13,21 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 })
 
-// ssr: false prevents WalletConnect from accessing indexedDB during server render
+// ssr: false prevents AppKit from accessing indexedDB during server render
 const Providers = dynamic(
   () => import('@/components/Providers').then((mod) => mod.Providers),
   { ssr: false }
 )
 
 export const metadata: Metadata = {
-  title: 'ChainFund — Decentralized Crowdfunding',
-  description: 'Transparent crowdfunding on the blockchain. No middlemen, funds go directly to smart contracts.',
+  title: 'Wallet Connect',
+  description: 'Connect your Web3 wallet',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans bg-background text-foreground antialiased`}
-      >
+      <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans bg-background text-foreground antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
