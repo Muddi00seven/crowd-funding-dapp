@@ -2,6 +2,8 @@
 
 A full-stack Web3 crowdfunding dApp built on **Ethereum Sepolia testnet**. Contributors fund campaigns with **USDT** (ERC-20). Everything runs through a smart contract — no backend, no middlemen.
 
+Built by [Mudassir Khan](https://mudassirkhan.me)
+
 ---
 
 ## Tech Stack
@@ -77,6 +79,7 @@ A full-stack Web3 crowdfunding dApp built on **Ethereum Sepolia testnet**. Contr
 - `MockUSDT.sol` includes a public `faucet()` function
 - Call it from Remix or Etherscan to receive **10,000 test USDT** per call, with no limit
 
+---
 
 ## User Flows
 
