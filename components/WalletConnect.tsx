@@ -1,56 +1,68 @@
+/**
+ * components/WalletConnect.tsx
+ *
+ * The root component — it does three things:
+ *   1. Shows a "Connect Wallet" button when no wallet is connected.
+ *   2. Once connected, shows the wallet address + ETH balance.
+ *   3. Renders the READ and WRITE contract panels below.
+ *
+ * AppKit hooks used here:
+ *   useAppKit()         → open() → opens the wallet selection modal
+ *   useAppKitAccount()  → gives us address + isConnected
+ *   useAppKitProvider() → gives us the raw EIP-1193 provider
+ *
+ * What is EIP-1193?
+ *   A standard interface that all wallets (MetaMask, Coinbase, etc.) implement.
+ *   ethers.js wraps it with BrowserProvider to give us a nicer API.
+ */
+
 'use client'
 
-// Import React hooks
 import { useEffect, useState } from 'react'
-
-// AppKit hooks to connect and read wallet state
 import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
-
-// ethers.js to read balance from the blockchain
 import { BrowserProvider } from 'ethers'
 import type { Eip1193Provider } from 'ethers'
 
+import { CONTRACT_ADDRESS }  from '@/lib/contract'
+import { ReadFunctions }     from '@/components/contract/ReadFunctions'
+import { WriteFunctions }    from '@/components/contract/WriteFunctions'
+
 export function WalletConnect() {
 
-  // open() → opens the wallet popup (connect / account view)
+  // open() → opens the AppKit modal (wallet connect / account view)
   const { open } = useAppKit()
 
-  // address → the user's wallet address, e.g. "0xAbc...1234"
-  // isConnected → true when a wallet is connected
+  // address     → the user's wallet address e.g. "0xAbcd...1234", or undefined
+  // isConnected → true once a wallet is connected
   const { address, isConnected } = useAppKitAccount()
 
-  // walletProvider → the raw EIP-1193 provider from the connected wallet
+  // walletProvider → the raw EIP-1193 wallet provider (what ethers wraps)
   const { walletProvider } = useAppKitProvider<Eip1193Provider>('eip155')
 
-  // Stores the ETH balance as a string, e.g. "0.0412"
-  const [balance, setBalance] = useState<string | null>(null)
-
-  // True while the balance is being fetched
+  // ETH balance shown in the header button
+  const [balance,        setBalance]        = useState<string | null>(null)
   const [loadingBalance, setLoadingBalance] = useState(false)
 
-  // Fetch balance whenever wallet connects or changes
+  // ── Fetch ETH balance whenever wallet connects or address changes ──────
   useEffect(() => {
-
-    // If wallet is not connected, clear the balance and exit
+    // Nothing to do if wallet isn't connected yet
     if (!isConnected || !walletProvider || !address) {
       setBalance(null)
       return
     }
 
-    const fetchBalance = async () => {
+    async function fetchBalance() {
       setLoadingBalance(true)
       try {
-        // Wrap the wallet provider with ethers so we can call getBalance
-        const provider = new BrowserProvider(walletProvider)
+        // Wrap the wallet provider with ethers so we can call getBalance()
+        const provider = new BrowserProvider(walletProvider as Eip1193Provider)
 
-        // Balance comes back in Wei (1 ETH = 10^18 Wei)
-        const balanceInWei = await provider.getBalance(address)
-
-        // Convert Wei to ETH and round to 4 decimal places
-        const balanceInEth = Number(balanceInWei) / 1e18
-        setBalance(balanceInEth.toFixed(4))
+        // getBalance() returns Wei (1 ETH = 10^18 Wei)
+        const balanceWei = await provider.getBalance(address!)
+        const balanceEth = Number(balanceWei) / 1e18
+        setBalance(balanceEth.toFixed(4))
       } catch {
-        setBalance('—') // Show a dash if something goes wrong
+        setBalance('—')
       } finally {
         setLoadingBalance(false)
       }
@@ -59,26 +71,48 @@ export function WalletConnect() {
     fetchBalance()
   }, [isConnected, walletProvider, address])
 
-  // Shorten the address for display: "0xAbcd...5678"
+  // Shorten address for display: "0xAbcd1234...5678"
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : ''
 
-  // --- UI ---
+  // ── Not connected → show connect button centered on screen ───────────
+  if (!isConnected || !address || !walletProvider) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <button
+          onClick={() => open()}
+          className="px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Connect Wallet
+        </button>
+      </div>
+    )
+  }
 
+  // ── Connected → show wallet info + contract panels ────────────────────
   return (
-    <button
-      onClick={() => isConnected && address ? open({ view: 'Account' }) : open()}
-      className={
-        isConnected && address
-          ? "px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
-          : "px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-      }
-    >
-      {isConnected && address
-        ? (loadingBalance ? '...' : `${balance} ETH · ${shortAddress}`)
-        : 'Connect Wallet'
-      }
-    </button>
+    <div className="w-full max-w-2xl mx-auto space-y-4 p-4 font-mono">
+
+      {/* Wallet header — clicking opens the account/disconnect modal */}
+      <button
+        onClick={() => open({ view: 'Account' })}
+        className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {loadingBalance ? '...' : `${balance} ETH · ${shortAddress}`}
+      </button>
+
+      {/* Show which contract address we're interacting with */}
+      <div className="text-xs text-muted-foreground">
+        contract: <span className="text-foreground">{CONTRACT_ADDRESS}</span>
+      </div>
+
+      {/* READ functions (view only — no gas, no signature) */}
+      <ReadFunctions walletProvider={walletProvider as Eip1193Provider} />
+
+      {/* WRITE functions (state-changing — needs MetaMask + gas) */}
+      <WriteFunctions walletProvider={walletProvider as Eip1193Provider} />
+
+    </div>
   )
 }
